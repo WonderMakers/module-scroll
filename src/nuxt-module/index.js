@@ -7,6 +7,7 @@ export default function (moduleOptions = {}) {
   this.addPlugin({
     src: path.resolve(__dirname, 'nuxt.scroll.plugin.js'),
     fileName: 'scroll.plugin.js',
-    options
+    options,
+    mode: 'client'
   })
 }
