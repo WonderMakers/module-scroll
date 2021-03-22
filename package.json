@@ -1,0 +1,25 @@
+{
+  "name": "scroll",
+  "version": "1.0.0",
+  "description": "scroll",
+  "repository": {
+    "type": "git",
+    "url": "https://git.hzberg.com/modules/scroll"
+  },
+  "main": "dist/nuxt.scroll.module.js",
+  "scripts": {
+    "lib-nuxt-module": "webpack --config ./src/nuxt-module/webpack.config.js",
+    "lib-nuxt-plugin": "webpack --config ./src/nuxt-plugin/webpack.config.js",
+    "libs": "npm run lib-nuxt-module && npm run lib-nuxt-plugin",
+    "build": "npm run libs"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "webpack": "^5.24.3",
+    "webpack-cli": "^4.5.0"
+  },
+  "dependencies": {
+    "body-scroll-lock": "^3.1.5"
+  }
+}
