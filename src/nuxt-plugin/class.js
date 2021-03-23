@@ -8,6 +8,8 @@ export class Scroll {
     this.scrollLeft = 0
     this.deltaX = 0
     this.deltaY = 0
+    this.lastDeltaScrollTop = 0
+    this.lastDeltaScrollLeft = 0
     this.progressTop = 0
     this.progressLeft = 0
     this.scrollTopMax = 0
@@ -56,6 +58,7 @@ export class Scroll {
 
   tick () {
     this.recalc()
+    this.calcDelta()
     this.update()
     this.animate()
     this.sendEvent('tick')
@@ -76,11 +79,17 @@ export class Scroll {
     }
   }
 
+  calcDelta () {
+    this.deltaX = this.scrollLeft - this.lastDeltaScrollLeft
+    this.deltaY = this.scrollTop - this.lastDeltaScrollTop
+    this.lastDeltaScrollTop = this.scrollTop
+    this.lastDeltaScrollLeft = this.scrollLeft
+  }
+
   update () {
     const scrollTop = this.$scrollingElement.scrollTop
     const scrollLeft = this.$scrollingElement.scrollLeft
-    this.deltaX = this.$scrollingElement.scrollLeft - this.scrollLeft
-    this.deltaY = this.$scrollingElement.scrollTop - this.scrollTop
+
     this.scrollTop = scrollTop
     this.scrollLeft = scrollLeft
     this.progressTop = this.scrollTopMax ? this.scrollTop / this.scrollTopMax : 0
