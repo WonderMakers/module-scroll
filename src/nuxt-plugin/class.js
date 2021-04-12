@@ -8,6 +8,8 @@ export class Scroll {
     this.scrollLeft = 0
     this.deltaX = 0
     this.deltaY = 0
+    this.deltaLastUpdateTime = 0
+    this.deltaUpdateDelay = 30
     this.lastDeltaScrollTop = 0
     this.lastDeltaScrollLeft = 0
     this.progressTop = 0
@@ -80,10 +82,14 @@ export class Scroll {
   }
 
   calcDelta () {
-    this.deltaX = this.scrollLeft - this.lastDeltaScrollLeft
-    this.deltaY = this.scrollTop - this.lastDeltaScrollTop
-    this.lastDeltaScrollTop = this.scrollTop
-    this.lastDeltaScrollLeft = this.scrollLeft
+    const now = Date.now()
+    if (now - this.deltaLastUpdateTime > this.deltaUpdateDelay) {
+      this.deltaX = this.scrollLeft - this.lastDeltaScrollLeft
+      this.deltaY = this.scrollTop - this.lastDeltaScrollTop
+      this.lastDeltaScrollTop = this.scrollTop
+      this.lastDeltaScrollLeft = this.scrollLeft
+      this.deltaLastUpdateTime = now
+    }
   }
 
   update () {
