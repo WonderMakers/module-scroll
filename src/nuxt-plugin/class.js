@@ -1,4 +1,5 @@
 import { disableBodyScroll, enableBodyScroll } from 'body-scroll-lock'
+import normalizeWheel from 'normalize-wheel'
 
 export class Scroll {
   constructor ($scrollContainer = document.scrollingElement, options = {}) {
@@ -67,18 +68,20 @@ export class Scroll {
     this.raf = requestAnimationFrame(this.events.tick)
   }
 
-  scroll () {
+  scroll (event) {
     this.update()
-    this.sendEvent('scroll')
+    this.sendEvent('scroll', event)
   }
 
   wheel (e) {
+    const normalize = normalizeWheel(e)
     if (this._animateOptions && this._animateOptions.cancelable) {
       this._animateOptions.resolve()
       this._animateOptions = null
     } else if (this._animateOptions && !this._animateOptions.cancelable) {
       e.preventDefault()
     }
+    this.sendEvent('wheel', { original: e, normalize })
   }
 
   calcDelta () {
@@ -106,11 +109,11 @@ export class Scroll {
     // }
   }
 
-  sendEvent (eventName) {
+  sendEvent (eventName, payload) {
     const callbacks = this.callbacks[eventName]
     const scrollData = this.scrollData
     for (const item of callbacks) {
-      item.callback(scrollData)
+      item.callback(scrollData, payload)
     }
   }
 
