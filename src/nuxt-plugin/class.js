@@ -22,7 +22,8 @@ export class Scroll {
     this.raf = null
     this.callbacks = {
       scroll: [],
-      tick: []
+      tick: [],
+      wheel: []
     }
     this.lockNamespaces = []
     this._animateOptions = null
