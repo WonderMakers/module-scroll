@@ -139,9 +139,9 @@ export class Scroll {
 
   resize () {}
 
-  lock (value, name) {
+  lock (value, name, container) {
     if (value) {
-      disableBodyScroll(this.$scrollContainer)
+      disableBodyScroll(container || this.$scrollContainer)
       if (name) {
         this.lockNamespaces.push(name)
       }
@@ -153,7 +153,7 @@ export class Scroll {
         }
       }
       if (!this.lockNamespaces.length) {
-        enableBodyScroll(this.$scrollContainer)
+        enableBodyScroll(container || this.$scrollContainer)
       }
     }
   }
