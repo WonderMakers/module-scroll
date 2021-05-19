@@ -158,7 +158,7 @@ export class Scroll {
     }
   }
 
-  scrollTo ({ x = 0, y = 0, element = null, duration = 0, cancelable = true }) {
+  scrollTo ({ x = 0, y = 0, element = null, duration = 0, offsetX = 0, offsetY = 0, cancelable = true }) {
     const isSafari = this.isSafari()
 
     return new Promise((resolve) => {
@@ -171,7 +171,10 @@ export class Scroll {
         cancelable,
         time: Date.now(),
         start: { y: this.scrollTop, x: this.scrollLeft },
-        distention: { y, x }
+        distention: {
+          y: y + offsetY,
+          x: x + offsetX
+        }
       }
       if (!isSafari) {
         this.$scrollingElement.style.setProperty('scroll-snap-type', 'none')
