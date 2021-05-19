@@ -163,7 +163,8 @@ export class Scroll {
 
     return new Promise((resolve) => {
       if (element instanceof HTMLElement) {
-        y = element.offsetTop
+        const rect = element.getBoundingClientRect()
+        y = rect.top + this.scrollTop
       }
       const scrollOptions = {
         resolve,
@@ -171,7 +172,7 @@ export class Scroll {
         cancelable,
         time: Date.now(),
         start: { y: this.scrollTop, x: this.scrollLeft },
-        distention: { y: y - this.scrollTop, x: x - this.scrollLeft }
+        distention: { y: y, x }
       }
       if (!isSafari) {
         this.$scrollingElement.style.setProperty('scroll-snap-type', 'none')
