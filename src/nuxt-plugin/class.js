@@ -1,6 +1,8 @@
 import { disableBodyScroll, enableBodyScroll } from 'body-scroll-lock'
 import normalizeWheel from 'normalize-wheel'
 
+const EASINGS = ['easeInOutQuad', 'easeInCubic', 'inOutQuintic']
+
 export class Scroll {
   constructor ($scrollContainer = document.scrollingElement, options = {}) {
     this.$scrollContainer = $scrollContainer === document.scrollingElement ? window : $scrollContainer
@@ -25,7 +27,7 @@ export class Scroll {
       tick: [],
       wheel: []
     }
-    this.lockNamespaces = []
+    this.locks = []
     this._animateOptions = null
     this.options = Object.assign({}, {}, options)
     this.events = {
@@ -64,7 +66,7 @@ export class Scroll {
     this.recalc()
     this.calcDelta()
     this.update()
-    this.animate()
+    this._animate()
     this.sendEvent('tick')
     this.raf = requestAnimationFrame(this.events.tick)
   }
@@ -108,6 +110,7 @@ export class Scroll {
     //   this.scrollTop = scrollTop
     //   this.scrollLeft = scrollLeft
     // }
+    return this
   }
 
   sendEvent (eventName, payload) {
@@ -125,7 +128,7 @@ export class Scroll {
         options
       })
     }
-    // this.notify()
+    return this
   }
 
   off (eventName, callback) {
@@ -135,32 +138,77 @@ export class Scroll {
         this.callbacks[eventName].splice(evetIndex, 1)
       }
     }
+    return this
   }
 
   resize () {}
-
-  lock (value, name, container) {
+  
+  /**
+   * Lock scroll
+   * @param value {Boolean} - lock value
+   * @param scrollContainer {HTMLElement} - Scrolling element
+   * @param options {Object} - lock options [https://github.com/willmcpo/body-scroll-lock#options]
+   * @return {Scroll|*}
+   */
+  lock (value, scrollContainer, options = {}) {
+    if (!(scrollContainer instanceof HTMLElement)) {
+      throw new Error('scrollContainer argument required')
+    }
+    const activeScrollLock = this.locks.find(item => item.active)
+  
+    if (activeScrollLock) {
+      enableBodyScroll(activeScrollLock.scrollContainer)
+      activeScrollLock.active = false
+    }
+  
     if (value) {
-      disableBodyScroll(container || this.$scrollContainer)
-      if (name) {
-        this.lockNamespaces.push(name)
-      }
+      this.locks.push({ scrollContainer, options, active: true })
+      disableBodyScroll(scrollContainer, options)
     } else {
-      if (name) {
-        const nameIndex = this.lockNamespaces.indexOf(name)
-        if (nameIndex > -1) {
-          this.lockNamespaces.splice(nameIndex, 1)
+      const scrollLockIndex = this.locks.findIndex(item => item.scrollContainer === scrollContainer)
+      
+      if (scrollLockIndex > -1) {
+        this.locks.splice(scrollLockIndex, 1)
+      }
+      if (this.locks.length) {
+        const lastScrollLock = this.locks[this.locks.length - 1]
+        if (lastScrollLock) {
+          lastScrollLock.active = true
+          disableBodyScroll(lastScrollLock.scrollContainer, lastScrollLock.options)
         }
       }
-      if (!this.lockNamespaces.length) {
-        enableBodyScroll(container || this.$scrollContainer)
-      }
     }
+    return this
   }
-
-  scrollTo ({ x = 0, y = 0, element = null, duration = 0, offsetX = 0, offsetY = 0, cancelable = true }) {
+  
+  /**
+   * Animate scroll
+   * @param x {Number}
+   * @param y {Number}
+   * @param element {HTMLElement}
+   * @param duration {Number}
+   * @param offsetX {Number}
+   * @param offsetY {Number}
+   * @param easing {String} [easeInOutQuad, easeInCubic, inOutQuintic]
+   * @param cancelable
+   * @return {Promise}
+   */
+  scrollTo ({
+    x = 0,
+    y = 0,
+    offsetX = 0,
+    offsetY = 0,
+    element = null,
+    duration = 0,
+    easing = 'easeInOutQuad',
+    cancelable = true
+  }) {
     const isSafari = this.isSafari()
 
+    if (!EASINGS.includes(easing)) {
+      throw new Error(`Incorrect variable 'easing' value. Available:[${EASINGS.join(',')}]`)
+    }
+    
     return new Promise((resolve) => {
       if (element instanceof HTMLElement) {
         y = element.getBoundingClientRect().top
@@ -169,6 +217,7 @@ export class Scroll {
         resolve,
         duration,
         cancelable,
+        easing,
         time: Date.now(),
         start: { y: this.scrollTop, x: this.scrollLeft },
         distention: {
@@ -187,19 +236,19 @@ export class Scroll {
       }
     }).then(() => {
       if (!isSafari) {
-        this.$scrollingElement.style.setProperty('scroll-snap-type', 'none')
+        this.$scrollingElement.style.removeProperty('scroll-snap-type')
       }
     })
   }
 
-  animate () {
+  _animate () {
     if (!this._animateOptions) {
       return false
     }
     const now = Date.now()
     const dTime = now - this._animateOptions.time
-    const positionX = easeInOutQuad(dTime, this._animateOptions.start.x, this._animateOptions.distention.x, this._animateOptions.duration)
-    const positionY = easeInOutQuad(dTime, this._animateOptions.start.y, this._animateOptions.distention.y, this._animateOptions.duration)
+    const positionX = Scroll[this._animateOptions.easing](dTime, this._animateOptions.start.x, this._animateOptions.distention.x, this._animateOptions.duration)
+    const positionY = Scroll[this._animateOptions.easing](dTime, this._animateOptions.start.y, this._animateOptions.distention.y, this._animateOptions.duration)
 
     this.setPosition(positionX, positionY)
 
@@ -212,6 +261,7 @@ export class Scroll {
   setPosition (x, y) {
     this.$scrollingElement.scrollLeft = x
     this.$scrollingElement.scrollTop = y
+    return this
   }
 
   destroy () {
@@ -223,24 +273,24 @@ export class Scroll {
   isSafari () {
     return /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
   }
-}
-
-function easeInOutQuad (t, b, c, d) {
-  t /= d / 2
-  if (t < 1) {
-    return c / 2 * t * t + b
+  
+  static easeInOutQuad (t, b, c, d) {
+    t /= d / 2
+    if (t < 1) {
+      return c / 2 * t * t + b
+    }
+    t--
+    return -c / 2 * (t * (t - 2) - 1) + b
   }
-  t--
-  return -c / 2 * (t * (t - 2) - 1) + b
+  
+  static easeInCubic (t, b, c, d) {
+    const tc = (t/=d) * t * t
+    return b + c * (tc)
+  }
+  
+  static inOutQuintic (t, b, c, d) {
+    const ts = (t/=d) * t
+    const tc = ts * t
+    return b + c * (6 * tc * ts + -15 * ts * ts + 10 * tc)
+  }
 }
-
-// function easeInCubic (t, b, c, d) {
-//   const tc = (t/=d) * t * t
-//   return b + c * (tc)
-// }
-//
-// function inOutQuintic (t, b, c, d) {
-//   const ts = (t/=d) * t
-//   const tc = ts * t
-//   return b + c * (6 * tc * ts + -15 * ts * ts + 10 * tc)
-// }
