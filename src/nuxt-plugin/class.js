@@ -163,7 +163,7 @@ export class Scroll {
 
     return new Promise((resolve) => {
       if (element instanceof HTMLElement) {
-        y = element.getBoundingClientRect().top
+        y = element.getBoundingClientRect().top + element.ownerDocument.defaultView.pageYOffset
       }
       const scrollOptions = {
         resolve,
