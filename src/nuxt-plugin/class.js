@@ -163,7 +163,8 @@ export class Scroll {
 
     return new Promise((resolve) => {
       if (element instanceof HTMLElement) {
-        y = element.getBoundingClientRect().top + element.ownerDocument.defaultView.pageYOffset
+        y = element.getBoundingClientRect().top + window.scrollY
+        x = element.getBoundingClientRect().left + window.scrollX
       }
       const scrollOptions = {
         resolve,
@@ -198,8 +199,9 @@ export class Scroll {
     }
     const now = Date.now()
     const dTime = now - this._animateOptions.time
-    const positionX = easeInOutQuad(dTime, this._animateOptions.start.x, this._animateOptions.distention.x, this._animateOptions.duration)
-    const positionY = easeInOutQuad(dTime, this._animateOptions.start.y, this._animateOptions.distention.y, this._animateOptions.duration)
+    const progress = easeInOutQuad(dTime / this._animateOptions.duration)
+    const positionX = (this._animateOptions.distention.x - this._animateOptions.start.x) * progress + this._animateOptions.start.x
+    const positionY = (this._animateOptions.distention.y - this._animateOptions.start.y) * progress + this._animateOptions.start.y
 
     this.setPosition(positionX, positionY)
 
@@ -225,22 +227,6 @@ export class Scroll {
   }
 }
 
-function easeInOutQuad (t, b, c, d) {
-  t /= d / 2
-  if (t < 1) {
-    return c / 2 * t * t + b
-  }
-  t--
-  return -c / 2 * (t * (t - 2) - 1) + b
+function easeInOutQuad (t) {
+  return t<.5 ? 2*t*t : -1+(4-2*t)*t
 }
-
-// function easeInCubic (t, b, c, d) {
-//   const tc = (t/=d) * t * t
-//   return b + c * (tc)
-// }
-//
-// function inOutQuintic (t, b, c, d) {
-//   const ts = (t/=d) * t
-//   const tc = ts * t
-//   return b + c * (6 * tc * ts + -15 * ts * ts + 10 * tc)
-// }
